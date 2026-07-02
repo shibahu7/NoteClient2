@@ -126,7 +126,16 @@ class AuthManager:
         page.get_by_role("button", name="ログイン").click()
         page.wait_for_load_state("networkidle")
 
-        cookies = context.cookies()
+        # note_gql_auth_token は networkidle 後に少し遅れて発行されるため、
+        # 発行を待たずに cookies() を取得すると API 認証に必要な cookie が
+        # 欠落し、以後の全リクエストが not_login エラーになる。
+        for _ in range(20):
+            cookies = context.cookies()
+            if any(c["name"] == "note_gql_auth_token" for c in cookies):
+                break
+            sleep(0.5)
+        else:
+            cookies = context.cookies()
 
         page.close()
         context.close()

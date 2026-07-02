@@ -25,7 +25,9 @@ class HttpClient:
     def post(self, url: str, headers: Optional[Dict[str, str]] = None, **kwargs) -> Dict[str, Any]:
         try:
             resp = requests.post(url, headers={**self.base_headers, **(headers or {})}, cookies=self.cookies, **kwargs)
-            ok = resp.status_code in (200, 201)
+            # S3 の presigned POST は成功時に 204 No Content を返す仕様のため、
+            # 200/201 のみを成功扱いにすると画像アップロードが常に失敗してしまう。
+            ok = resp.status_code in (200, 201, 204)
             return {
                 "ok": ok,
                 "status_code": resp.status_code,
